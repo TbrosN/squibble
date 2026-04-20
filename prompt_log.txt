@@ -100,3 +100,19 @@ switch our backend to use uv instead of pip
 what's the pricing of each of the models we use? How does this compare to the best models right now (use up to date research)? How does it compare to the cheapest Gemini,OpenAI,and anthropic models available right now via API?
 
 @backend/.env.example I want to switch us to use these API keys. That is, we will use elevenlabs for TTS, anthropic for script generation, and the gemini api key for nano banana image generation. For the script, let's use opus or sonnet, as we need a capable model, but for the TTS and image generation we can use cheap models. Do up to date research on pricing and capabilities to decide which models to use.
+
+I can't run this currently:
+❯ uv run main.py
+/Users/trey/Projects/squibble/backend/.venv/lib/python3.14/site-packages/elevenlabs/core/pydantic_utilities.py:13: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  from pydantic.v1.datetime_parse import parse_date as parse_date
+
+yes please add a __main__ block so it runs
+
+I'm getting this error, what do I do?
+FO] httpx: HTTP Request: POST https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent "HTTP/1.1 429 Too Many Requests"
+11:58:27 [ERROR] services.generation_service: Generation job <id here> failed: ImageService failed on line 0: 429 RESOURCE_EXHAUSTED. {'error': {'code': 429, 'message': 'You exceeded your current quota, please check your plan and billing details.
+
+Is this really due to maxing out my usage, or could it be too many parallel requests to the image model?
+
+@SPEC.md review this codebase against the spec. write a review in @REVIEW.md . Flag things as separate categories like bugs, style issues, and ux issues. Make the flags clear and concise, and put each flag on a new line like
+```[BUG] Descriptive title. Details of the bug...```
