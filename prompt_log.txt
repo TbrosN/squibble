@@ -1,0 +1,92 @@
+[I used Gemini, Claude, Codex, and Cursor. I used the agentic build approach.
+To start, I asked Gemini and Claude to help with planning/writing the spec.]
+
+I want to make a pipeline that generates AI history and interesting story videos. I've seen these on youtube, where they do things like "your life as a quant trader" and it's an AI script, where for each line, they show a different image, these are stick-figure type images and diagrams. Some of these have millions of views! This pipeline will be my attempt at making it big as this type of content creator, and learning how to play the social media game. Come up with a name, plus a spec for my coding team to implement a very low-lift mvp for this.
+
+nah let's come up with more playful names, perhaps that reflect the stick figure nature or the pipeline/autonomous nature. Come up with 50 names, comma separated with a space, no other txt
+
+make this single-word, either real words or made up/compound ones
+
+I like inkstream, but want to take the analogy one step further: let's do a cute octopus or squid inspired name, akin to how openclaw is a nod to the lobster
+
+Awesome, we'll call it squibble. Our MVP contains a lot of stuff that doesnt really matter for the basic core functionality. Let's strip this down to just the essentials.
+
+nah the syncing is important, we need each line of the script to correspond to one image, and we need the slides to change when the audio of the line finishes. Also, your model suggestions are out of date. Please do up to date research on the latest models and most modern libraries and tools we can utilize here to make this as low-lift and core feature-focused as possible
+
+ok awesome, now let's rethink our model choices for cost. We don't need the most expensive and capable models for everything; some things may require great models (like the script), but other places don't matter as much (like the image gen, or audio gen up to a point)
+
+no I just told you, let's NOT skimp out on the script. We need a very capable model to write us a great script. But the rest can use cheaper models for sure
+
+[At this point, I switched from Gemini Flash to Claude,
+since I wasn't happy with the plan it was making. I gave Claude more details
+about what I was looking for, to start it off.]
+
+I want to make a pipeline that generates AI history and interesting story videos. I've seen these on youtube, where they do things like "your life as a quant trader" and it's an AI script, where for each line, they show a different image, these are stick-figure type images and diagrams. Some of these have millions of views! This pipeline will be my attempt at making it big as this type of content creator, and learning how to play the social media game. It will be called squibble. Please make a plan for an MVP that contains just the core features. Some starting notes:
+
+* We will generate a script, using a smart/capable model
+* The script will need audio, which we should use a cheap, but still decent-sounding, model for
+* For each line of the script, we generate an image. We can use a cheap model here.
+* We need to align the images with the audio, so that when line X starts, we are on the image generated for line X
+
+We do want a frontend for this, albeit a pretty basic one. UX flow looks like
+
+* User talks with a chatbot to write and revise a script on a canvas. They can highlight particular regions and ask for edits/give feedback there.
+* One script is OK'd, they move to the next stage, where we will generate images plus audio. This is pretty hands-off, but user can see what's being generated and, importantly, can CANCEL the process if they need to. It's important that user gets intermediate feedback as the audio and images are processing, and that they can cancel, so we dont consume tons of API usage if the user changes their mind about making the video, or realizes they need to make tweaks to the script again
+* Via cancellation, user can go back from stage 2 to stage 1, and user can still review the script while in stage 2.
+* The UI should be modern and sleek, using liquid glass-like transparency, clean spacing, and minimalistic styles.
+* User can also view a preview video of whats been generated so far in stage 2.
+* Once finished, user can view a full preview of the video, and then can download the video
+
+Update the spec to include the frontend, in addition to the backend we discussed. Consider the backend API structure and interaction with the frontend as well
+
+On the script studio: The chat bar can simply be at the bottom of the page, no need for paneling. And another thing-- the user should be able to directly edit the script as well.
+
+
+
+For the generation studio, let's keep in mind that we will be generating many videos and audio clips. We should display the generating images in a grid, and the audio for that slide is paired with it, so we can see the status of the audio generation as well. When clicked, it opens a preview where we can watch just that image and hear the audio over it. This eliminates the need for the complex live preview video player. Let's use next.js for the frontend. On the FE/BE contract:
+
+
+
+
+
+Frontend should just be responsible for the user-facing things. Backend should handle things like the llm api calls, handling of chat history and system prompts,etc.
+
+
+
+We should design the project and code in a modular fashion: clear separation into directories, files, classes, and functions based on ownership.
+
+
+
+Use OOP principles to make clean and clear abstractions and avoid code duplication
+
+
+
+see style guidelines for more info
+
+## Style Guidelines
+
+- Make sure to keep the code modular: each file should have a clear responsibility, and we should organize the repo into appropriate folders, files, and helper functions.
+- Avoid magic numbers and hard-coded strings. Instead, use `constants.py` files so there's a single source of truth that is easy to update.
+- Clean up dead code: if you create a file or function that ends up not being used, you must remove it
+- Use OOP: avoid complex string dictionary structures for storing objects; instead, opt for classes (including dataclasses or Pydantic objects)
+- IMPORTANT: NEVER expose environment variables on the frontend. All frontend environment variables are effectively public. Any sensitive variabels like secret API keys should be stored on the backend.
+  - Furthermore, ensure that any .env files are in the appropriate gitignore files
+
+Please update the spec accordingly.
+
+when we are emitting, let's use pydantic or dataclasses rather than raw dicts. Also make sure to add a hint for this and the other things I mentioned to a "style" section of the spec.
+
+add error handling and logging guidelines like so:
+
+```markdown
+## Error Handling & Logging
+
+- All exceptions will be caught and logged either as warnings or errors.
+  - Error log for fatal errors. These result in broken app functionality
+  - Warning log for non-fatal errors
+  - Ensure that logging will reach the terminal running the app, and not just the client-side console
+  - Top-level functions should log the warning or error at the end. Other functions simply re-raise the exception with their error message in it. This ensures that we don't have duplicate error logs, and that we have sufficient information about the call stack.
+  - Handle errors gracefully; we should never show users raw error messages. Instead, users should be met with a clear, understandable message that doesn't break the UI.
+```
+
+Please output the full updated spec with everything included
