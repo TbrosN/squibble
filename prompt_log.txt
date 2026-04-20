@@ -90,3 +90,7 @@ add error handling and logging guidelines like so:
 ```
 
 Please output the full updated spec with everything included
+
+@/Users/trey/Projects/sousie/SPEC.md implement this spec. pay close attention to the style guidelines. The spec is your guide, but it is not absolutely perfect; use your own judgement to deviate from the spec if needed. But the core ideas should stay true to the spec.
+
+switch our backend to use uv instead of pip

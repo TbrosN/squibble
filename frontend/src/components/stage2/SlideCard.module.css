@@ -1,0 +1,153 @@
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(140%);
+  box-shadow: var(--shadow-glass), var(--shadow-inset);
+  cursor: pointer;
+  transition: transform 200ms ease, border-color 200ms ease, box-shadow 200ms ease;
+  animation: squibble-fade-in 200ms ease both;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  border-color: var(--glass-border-strong);
+}
+
+.card:disabled,
+.card[aria-disabled="true"] {
+  cursor: default;
+}
+
+.imageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+}
+
+.image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  animation: squibble-fade-in 260ms ease both;
+}
+
+.shimmer {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.02) 0%,
+    rgba(255, 255, 255, 0.06) 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(255, 255, 255, 0.06) 60%,
+    rgba(255, 255, 255, 0.02) 100%
+  );
+  background-size: 200% 100%;
+  animation: squibble-shimmer 1.6s linear infinite;
+}
+
+.statusOverlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 4px 10px;
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  background: rgba(10, 10, 15, 0.55);
+  border: 1px solid var(--glass-border);
+  color: var(--text-subtle);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.statusGenerating {
+  color: var(--text);
+  animation: squibble-pulse 1.4s ease-in-out infinite;
+}
+
+.statusDone {
+  color: var(--success);
+  border-color: rgba(16, 185, 129, 0.5);
+}
+
+.statusError {
+  color: var(--danger);
+  border-color: rgba(244, 63, 94, 0.55);
+}
+
+.lineIndex {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border-radius: 8px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-subtle);
+  background: rgba(10, 10, 15, 0.55);
+  border: 1px solid var(--glass-border);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.body {
+  padding: 14px 16px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 92px;
+}
+
+.lineText {
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.audioRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.audioDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--text-muted);
+}
+
+.audioDot.pending { background: rgba(255, 255, 255, 0.2); }
+.audioDot.generating {
+  background: var(--accent);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: squibble-pulse 1.2s ease-in-out infinite;
+}
+.audioDot.done {
+  background: var(--success);
+  box-shadow: 0 0 10px var(--success-glow);
+}
+.audioDot.error {
+  background: var(--danger);
+  box-shadow: 0 0 10px var(--danger-glow);
+}
