@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { ScriptLine } from "@/types";
 
 export type ScriptEditor = {
@@ -8,19 +8,29 @@ export type ScriptEditor = {
   selectedIds: number[];
   setLines: (lines: ScriptLine[]) => void;
   updateLine: (id: number, patch: Partial<Omit<ScriptLine, "id">>) => void;
+  addLine: () => number;
+  removeLine: (id: number) => void;
   toggleSelected: (id: number) => void;
   clearSelection: () => void;
   isSelected: (id: number) => boolean;
   isEmpty: boolean;
 };
 
+function nextId(lines: ScriptLine[]): number {
+  return lines.reduce((max, l) => (l.id > max ? l.id : max), -1) + 1;
+}
+
 export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
   const [lines, setLinesState] = useState<ScriptLine[]>(initial);
   const [selectedIds, setSelectedIds] = useState<number[]>([]);
 
+  const nextIdRef = useRef(nextId(initial));
+
   const setLines = useCallback((next: ScriptLine[]) => {
     setLinesState(next);
     setSelectedIds((prev) => prev.filter((id) => next.some((l) => l.id === id)));
+    const candidate = nextId(next);
+    if (candidate > nextIdRef.current) nextIdRef.current = candidate;
   }, []);
 
   const updateLine = useCallback(
@@ -31,6 +41,21 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     },
     [],
   );
+
+  const addLine = useCallback(() => {
+    const id = nextIdRef.current;
+    nextIdRef.current += 1;
+    setLinesState((prev) => [
+      ...prev,
+      { id, line: "", image_prompt: "" },
+    ]);
+    return id;
+  }, []);
+
+  const removeLine = useCallback((id: number) => {
+    setLinesState((prev) => prev.filter((l) => l.id !== id));
+    setSelectedIds((prev) => prev.filter((x) => x !== id));
+  }, []);
 
   const toggleSelected = useCallback((id: number) => {
     setSelectedIds((prev) =>
@@ -51,6 +76,8 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     selectedIds,
     setLines,
     updateLine,
+    addLine,
+    removeLine,
     toggleSelected,
     clearSelection,
     isSelected,

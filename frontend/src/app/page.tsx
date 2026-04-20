@@ -38,8 +38,8 @@ export default function HomePage() {
   );
 
   const startGeneration = useCallback(async () => {
-    setStage("generation");
-    await generation.start(script.lines);
+    const started = await generation.start(script.lines);
+    if (started) setStage("generation");
   }, [generation, script.lines]);
 
   const backToScript = useCallback(async () => {
@@ -70,7 +70,8 @@ export default function HomePage() {
     stage === "script" &&
     script.lines.length > 0 &&
     script.lines.every((l) => l.line.trim().length > 0) &&
-    !chat.sending;
+    !chat.sending &&
+    generation.phase !== "starting";
 
   const doneCount = useMemo(
     () => generation.slides.filter((s) => s.status === "done").length,
@@ -100,7 +101,9 @@ export default function HomePage() {
                 : "Write a script first, and make sure every line has content."
             }
           >
-            Generate Video →
+            {generation.phase === "starting"
+              ? "Starting…"
+              : "Generate Video →"}
           </Button>
         ) : (
           <>
@@ -117,10 +120,19 @@ export default function HomePage() {
                 </Button>
               </a>
             )}
-            {(generation.phase === "running" ||
-              generation.phase === "starting") && (
-              <CancelButton onClick={cancelGeneration} />
-            )}
+            <CancelButton
+              onClick={cancelGeneration}
+              disabled={
+                generation.phase !== "running" &&
+                generation.phase !== "starting"
+              }
+              title={
+                generation.phase === "running" ||
+                generation.phase === "starting"
+                  ? "Stop generation"
+                  : "Nothing to cancel"
+              }
+            />
           </>
         )}
       </div>
@@ -131,6 +143,10 @@ export default function HomePage() {
             <ScriptEditor state={script} />
           </GlassPanel>
           <ErrorMessage message={chat.error} onDismiss={chat.dismissError} />
+          <ErrorMessage
+            message={generation.error}
+            onDismiss={generation.dismissError}
+          />
           <ChatBar
             messages={chat.messages}
             sending={chat.sending}

@@ -23,9 +23,10 @@ export type GenerationController = {
   jobId: string | null;
   finalUrl: string | null;
   error: string | null;
-  start: (script: ScriptLine[]) => Promise<void>;
+  start: (script: ScriptLine[]) => Promise<boolean>;
   cancel: () => Promise<void>;
   reset: () => void;
+  dismissError: () => void;
 };
 
 function buildInitialSlides(script: ScriptLine[]): SlideAsset[] {
@@ -44,6 +45,10 @@ export function useGeneration(): GenerationController {
   const [error, setError] = useState<string | null>(null);
 
   const esRef = useRef<EventSource | null>(null);
+  const phaseRef = useRef<GenerationPhase>("idle");
+  useEffect(() => {
+    phaseRef.current = phase;
+  }, [phase]);
 
   const closeStream = useCallback(() => {
     if (esRef.current) {
@@ -119,8 +124,25 @@ export function useGeneration(): GenerationController {
       };
 
       es.onerror = () => {
-        // EventSource surfaces connection issues here. Once we've reached a
-        // terminal phase the stream is closed server-side and that's expected.
+        // If we've already reached a terminal phase, the server closed the
+        // stream intentionally and this event is expected.
+        const current = phaseRef.current;
+        if (
+          current === "complete" ||
+          current === "cancelled" ||
+          current === "error"
+        ) {
+          return;
+        }
+        // Otherwise the connection was lost mid-generation. Surface a
+        // recovery state so the user isn't stuck on a silent grid.
+        if (es.readyState === EventSource.CLOSED) {
+          closeStream();
+          setError(
+            "Lost connection to the generation stream. Head back to the script and try again.",
+          );
+          setPhase("error");
+        }
       };
     },
     [closeStream, handleEvent],
@@ -128,7 +150,7 @@ export function useGeneration(): GenerationController {
 
   const start = useCallback<GenerationController["start"]>(
     async (script) => {
-      if (phase === "running" || phase === "starting") return;
+      if (phase === "running" || phase === "starting") return false;
       setError(null);
       setFinalUrl(null);
       setSlides(buildInitialSlides(script));
@@ -139,13 +161,16 @@ export function useGeneration(): GenerationController {
         setJobId(job_id);
         setPhase("running");
         openStream(job_id);
+        return true;
       } catch (e) {
         const message =
           e instanceof ApiError
             ? e.message
             : "Couldn't start generation. Please try again.";
         setError(message);
-        setPhase("error");
+        setPhase("idle");
+        setSlides([]);
+        return false;
       }
     },
     [openStream, phase],
@@ -165,5 +190,17 @@ export function useGeneration(): GenerationController {
     setPhase("cancelled");
   }, [closeStream, jobId, reset]);
 
-  return { phase, slides, jobId, finalUrl, error, start, cancel, reset };
+  const dismissError = useCallback(() => setError(null), []);
+
+  return {
+    phase,
+    slides,
+    jobId,
+    finalUrl,
+    error,
+    start,
+    cancel,
+    reset,
+    dismissError,
+  };
 }

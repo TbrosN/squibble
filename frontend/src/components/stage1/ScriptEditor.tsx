@@ -1,5 +1,6 @@
 "use client";
 
+import { useCallback } from "react";
 import type { ScriptEditor as ScriptEditorState } from "@/hooks/useScriptEditor";
 import { LineBlock } from "./LineBlock";
 import styles from "./ScriptEditor.module.css";
@@ -15,9 +16,21 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
     isSelected,
     toggleSelected,
     updateLine,
+    addLine,
+    removeLine,
     clearSelection,
     isEmpty,
   } = state;
+
+  const handleAddLine = useCallback(() => {
+    const id = addLine();
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLTextAreaElement>(
+        `[data-line-id="${id}"]`,
+      );
+      el?.focus();
+    });
+  }, [addLine]);
 
   if (isEmpty) {
     return (
@@ -25,9 +38,16 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
         <h2 className={styles.emptyTitle}>Your canvas is empty.</h2>
         <p className={styles.emptySub}>
           Tell the assistant what story you want to tell — a topic, a vibe, a
-          character. It'll draft a tight script right here, and you can edit
-          any line directly or highlight lines to ask for targeted rewrites.
+          character. It'll draft a tight script right here. Or start typing
+          your first line directly.
         </p>
+        <button
+          type="button"
+          className={styles.primaryAddButton}
+          onClick={handleAddLine}
+        >
+          + Write the first line
+        </button>
       </div>
     );
   }
@@ -58,8 +78,16 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
           selected={isSelected(line.id)}
           onToggleSelect={toggleSelected}
           onChange={updateLine}
+          onRemove={removeLine}
         />
       ))}
+      <button
+        type="button"
+        className={styles.addLineButton}
+        onClick={handleAddLine}
+      >
+        + Add line
+      </button>
     </div>
   );
 }

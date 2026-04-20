@@ -116,3 +116,5 @@ Is this really due to maxing out my usage, or could it be too many parallel requ
 
 @SPEC.md review this codebase against the spec. write a review in @REVIEW.md . Flag things as separate categories like bugs, style issues, and ux issues. Make the flags clear and concise, and put each flag on a new line like
 ```[BUG] Descriptive title. Details of the bug...```
+
+@REVIEW.md:5-9 let's fix these UX bugs.

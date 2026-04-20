@@ -86,3 +86,33 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+.removeButton {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-muted);
+  font-size: 16px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease, border-color 140ms ease,
+    background 140ms ease;
+  margin-top: 4px;
+}
+
+.row:hover .removeButton,
+.removeButton:focus-visible {
+  opacity: 1;
+}
+
+.removeButton:hover {
+  color: var(--danger, #f43f5e);
+  border-color: rgba(244, 63, 94, 0.45);
+  background: rgba(244, 63, 94, 0.08);
+}

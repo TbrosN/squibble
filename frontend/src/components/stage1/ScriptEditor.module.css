@@ -26,6 +26,44 @@
   line-height: 1.6;
 }
 
+.primaryAddButton {
+  margin-top: 20px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 10px 22px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 0 16px var(--accent-glow);
+  transition: transform 120ms ease, box-shadow 160ms ease;
+}
+
+.primaryAddButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 22px var(--accent-glow);
+}
+
+.addLineButton {
+  align-self: stretch;
+  margin: 6px 2px 2px;
+  padding: 10px 14px;
+  background: transparent;
+  border: 1px dashed var(--glass-border-strong);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  font-size: 13.5px;
+  cursor: pointer;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.addLineButton:hover {
+  color: var(--text);
+  border-color: var(--accent);
+  background: rgba(99, 102, 241, 0.06);
+}
+
 .selectionBar {
   position: sticky;
   top: 0;

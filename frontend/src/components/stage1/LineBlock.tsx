@@ -10,6 +10,7 @@ type LineBlockProps = {
   selected: boolean;
   onToggleSelect: (id: number) => void;
   onChange: (id: number, patch: Partial<Omit<ScriptLine, "id">>) => void;
+  onRemove?: (id: number) => void;
 };
 
 export function LineBlock({
@@ -18,6 +19,7 @@ export function LineBlock({
   selected,
   onToggleSelect,
   onChange,
+  onRemove,
 }: LineBlockProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -47,6 +49,7 @@ export function LineBlock({
           value={line.line}
           rows={1}
           placeholder="Write a line..."
+          data-line-id={line.id}
           onChange={(e) => onChange(line.id, { line: e.target.value })}
         />
         {line.image_prompt && (
@@ -55,6 +58,17 @@ export function LineBlock({
           </div>
         )}
       </div>
+      {onRemove && (
+        <button
+          type="button"
+          className={styles.removeButton}
+          onClick={() => onRemove(line.id)}
+          aria-label="Remove line"
+          title="Remove line"
+        >
+          ×
+        </button>
+      )}
     </div>
   );
 }
