@@ -94,3 +94,9 @@ Please output the full updated spec with everything included
 @/Users/trey/Projects/sousie/SPEC.md implement this spec. pay close attention to the style guidelines. The spec is your guide, but it is not absolutely perfect; use your own judgement to deviate from the spec if needed. But the core ideas should stay true to the spec.
 
 switch our backend to use uv instead of pip
+
+@backend/.env.example:1-3 what are each of these api keys used for?
+
+what's the pricing of each of the models we use? How does this compare to the best models right now (use up to date research)? How does it compare to the cheapest Gemini,OpenAI,and anthropic models available right now via API?
+
+@backend/.env.example I want to switch us to use these API keys. That is, we will use elevenlabs for TTS, anthropic for script generation, and the gemini api key for nano banana image generation. For the script, let's use opus or sonnet, as we need a capable model, but for the TTS and image generation we can use cheap models. Do up to date research on pricing and capabilities to decide which models to use.

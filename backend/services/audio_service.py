@@ -1,12 +1,12 @@
-"""Text-to-speech per-line audio generation."""
+"""Text-to-speech per-line audio generation via ElevenLabs."""
 
 from __future__ import annotations
 
 import asyncio
 from pathlib import Path
 
+from elevenlabs.client import AsyncElevenLabs
 from mutagen.mp3 import MP3
-from openai import AsyncOpenAI
 
 from config import settings
 from constants import Generation, Models
@@ -16,20 +16,25 @@ from models.script import ScriptLine
 
 class AudioService:
     def __init__(self) -> None:
-        self._client = AsyncOpenAI(api_key=settings.openai_api_key)
+        self._client = AsyncElevenLabs(api_key=settings.elevenlabs_api_key)
 
     async def generate(self, line: ScriptLine, job_id: str, job_dir: Path) -> AudioResult:
         try:
             filename = Generation.AUDIO_FILENAME_TEMPLATE.format(index=line.id)
             audio_path = job_dir / filename
 
-            response = await self._client.audio.speech.create(
-                model=Models.TTS,
-                voice=Models.TTS_VOICE,
-                input=line.line,
-                response_format="mp3",
+            audio_stream = self._client.text_to_speech.convert(
+                voice_id=Models.TTS_VOICE_ID,
+                model_id=Models.TTS,
+                text=line.line,
+                output_format=Models.TTS_OUTPUT_FORMAT,
             )
-            audio_bytes = await self._read_bytes(response)
+
+            chunks: list[bytes] = []
+            async for chunk in audio_stream:
+                if chunk:
+                    chunks.append(chunk)
+            audio_bytes = b"".join(chunks)
 
             await asyncio.to_thread(audio_path.write_bytes, audio_bytes)
             duration = await asyncio.to_thread(self._probe_duration, audio_path)
@@ -41,17 +46,6 @@ class AudioService:
             )
         except Exception as e:
             raise RuntimeError(f"AudioService failed on line {line.id}: {e}") from e
-
-    @staticmethod
-    async def _read_bytes(response) -> bytes:
-        if hasattr(response, "aread"):
-            return await response.aread()
-        if hasattr(response, "read"):
-            data = response.read()
-            if asyncio.iscoroutine(data):
-                return await data
-            return data
-        return response.content
 
     @staticmethod
     def _probe_duration(path: Path) -> float:

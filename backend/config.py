@@ -5,8 +5,8 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     anthropic_api_key: str
-    openai_api_key: str
-    replicate_api_token: str
+    elevenlabs_api_key: str
+    gemini_api_key: str
 
     cors_allow_origins: str = "http://localhost:3000"
 

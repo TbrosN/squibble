@@ -4,10 +4,11 @@ from pathlib import Path
 
 
 class Models:
-    SCRIPT = "claude-sonnet-4-5-20250929"
-    TTS = "tts-1"
-    TTS_VOICE = "alloy"
-    IMAGE = "black-forest-labs/flux-schnell"
+    SCRIPT = "claude-sonnet-4-6" # same price as sonnet 4.5, but better
+    TTS = "eleven_flash_v2_5"
+    TTS_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
+    TTS_OUTPUT_FORMAT = "mp3_44100_128"
+    IMAGE = "gemini-2.5-flash-image"
 
 
 class Paths:
