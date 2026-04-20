@@ -10,13 +10,14 @@ A sleek two-stage creative tool: collaborate with AI to write a tight script, th
 
 ### Stage 1 — Script Studio
 
-A full-canvas **script editor** where each line is a directly editable block. A **chat bar** sits pinned at the bottom of the page — the user types naturally, and Claude responds by updating the script in place. Users can **highlight one or more lines** and send targeted feedback ("make line 3 funnier", "rewrite the intro") — selected lines are included in the request context automatically.
+A full-canvas **script editor** where each line is a directly editable block. A **chat bar** sits pinned at the bottom of the page — the user types naturally, and Claude responds by updating the script in place. Users can **highlight one or more lines** and send targeted feedback ("make this line funnier", "rewrite the intro") — selected lines are included in the request context automatically.
 
 A **"Generate Video →"** CTA in the top-right advances to Stage 2.
 
 ### Stage 2 — Generation Studio
 
 A **grid of cards**, one per script line. Each card shows:
+
 - The image (placeholder shimmer → generated thumbnail)
 - The line text beneath it
 - An audio status indicator (pending / generating / ✓ done)
@@ -140,17 +141,17 @@ backend/
 
 ### Service Class Responsibilities
 
-**`ScriptService`** — owns everything Claude-related for Stage 1. Maintains the system prompt, accepts the full message history from the router (passed in per request, since HTTP is stateless), and returns a structured `list[ScriptLine]` plus a reply string. No chat history is stored server-side — the frontend holds it and sends it each time.
+`**ScriptService**` — owns everything Claude-related for Stage 1. Maintains the system prompt, accepts the full message history from the router (passed in per request, since HTTP is stateless), and returns a structured `list[ScriptLine]` plus a reply string. No chat history is stored server-side — the frontend holds it and sends it each time.
 
-**`AudioService`** — takes a `ScriptLine`, calls TTS, writes the `.mp3`, returns the file path and duration in seconds.
+`**AudioService**` — takes a `ScriptLine`, calls TTS, writes the `.mp3`, returns the file path and duration in seconds.
 
-**`ImageService`** — takes a `ScriptLine`, calls the image API, writes the `.png`, returns the file path.
+`**ImageService**` — takes a `ScriptLine`, calls the image API, writes the `.png`, returns the file path.
 
-**`GenerationService`** — orchestrates `AudioService` and `ImageService` concurrently per line, checks the cancel event between lines, emits SSE events, calls `VideoService` when complete.
+`**GenerationService**` — orchestrates `AudioService` and `ImageService` concurrently per line, checks the cancel event between lines, emits SSE events, calls `VideoService` when complete.
 
-**`VideoService`** — wraps ffmpeg. Takes a list of `(image_path, audio_path, duration)` tuples and produces a `.mp4`.
+`**VideoService**` — wraps ffmpeg. Takes a list of `(image_path, audio_path, duration)` tuples and produces a `.mp4`.
 
-**`JobStore`** — a singleton dict-backed registry of active `Job` objects. Provides `create()`, `get()`, `cancel()`.
+`**JobStore**` — a singleton dict-backed registry of active `Job` objects. Provides `create()`, `get()`, `cancel()`.
 
 ---
 
@@ -360,6 +361,8 @@ settings = Settings()
 
 **Frontend/backend boundary.** The frontend is responsible for UI state and user interaction only. All LLM calls, prompt construction, chat history management, system prompts, and file handling are backend concerns. The frontend sends user intent; the backend decides how to fulfill it.
 
+**Frontend Custom Component Library.** For repeated styles used throughout the site, do not rewrite similar code across components. Instead, create custom component primitives for our project, such as Button.tsx that can be reused across many components.
+
 ---
 
 ## Error Handling & Logging
@@ -393,18 +396,22 @@ This ensures no duplicate log entries and that the full call stack context is pr
 
 ## Security & Secrets
 
-| Location | What lives there |
-|---|---|
-| `backend/.env` | All API keys — gitignored |
-| `frontend/.env.local` | `NEXT_PUBLIC_API_URL` only — no secrets |
-| Frontend bundle | Nothing sensitive — all LLM calls proxied through backend |
+
+| Location              | What lives there                                          |
+| --------------------- | --------------------------------------------------------- |
+| `backend/.env`        | All API keys — gitignored                                 |
+| `frontend/.env.local` | `NEXT_PUBLIC_API_URL` only — no secrets                   |
+| Frontend bundle       | Nothing sensitive — all LLM calls proxied through backend |
+
 
 ---
 
 ## Out of Scope for MVP
+
 - Auth / user accounts
 - Persisted project history
 - Caption burn-in
 - Background music
 - Social media upload
 - Per-line retry on failure
+
