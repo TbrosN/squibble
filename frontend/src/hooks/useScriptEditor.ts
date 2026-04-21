@@ -10,6 +10,7 @@ export type ScriptEditor = {
   updateLine: (id: number, patch: Partial<Omit<ScriptLine, "id">>) => void;
   addLine: () => number;
   removeLine: (id: number) => void;
+  splitLine: (id: number, sentences: string[]) => number[];
   toggleSelected: (id: number) => void;
   clearSelection: () => void;
   isSelected: (id: number) => boolean;
@@ -57,6 +58,35 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     setSelectedIds((prev) => prev.filter((x) => x !== id));
   }, []);
 
+  // Replace the line at `id` with N lines, one per sentence. The first sentence
+  // keeps the original id (and its image_prompt); remaining sentences become
+  // fresh empty-prompt lines inserted directly after. Returns the list of ids
+  // for every resulting line (length === sentences.length).
+  const splitLine = useCallback((id: number, sentences: string[]): number[] => {
+    const cleaned = sentences.map((s) => s.trim()).filter(Boolean);
+    if (cleaned.length === 0) return [];
+
+    // Reserve ids up-front so the updater is pure and StrictMode-safe.
+    const newIds: number[] = [id];
+    for (let i = 1; i < cleaned.length; i++) {
+      newIds.push(nextIdRef.current);
+      nextIdRef.current += 1;
+    }
+
+    setLinesState((prev) => {
+      const idx = prev.findIndex((l) => l.id === id);
+      if (idx === -1) return prev;
+      const current = prev[idx];
+      const replacements: ScriptLine[] = cleaned.map((text, i) =>
+        i === 0
+          ? { ...current, line: text }
+          : { id: newIds[i], line: text, image_prompt: "" },
+      );
+      return [...prev.slice(0, idx), ...replacements, ...prev.slice(idx + 1)];
+    });
+    return newIds;
+  }, []);
+
   const toggleSelected = useCallback((id: number) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
@@ -78,6 +108,7 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     updateLine,
     addLine,
     removeLine,
+    splitLine,
     toggleSelected,
     clearSelection,
     isSelected,

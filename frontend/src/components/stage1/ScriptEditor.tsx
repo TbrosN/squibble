@@ -18,6 +18,7 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
     updateLine,
     addLine,
     removeLine,
+    splitLine,
     clearSelection,
     isEmpty,
   } = state;
@@ -32,6 +33,27 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
     });
   }, [addLine]);
 
+  const handlePasteMultiline = useCallback(
+    (id: number, sentences: string[]) => {
+      const ids = splitLine(id, sentences);
+      const lastId = ids[ids.length - 1];
+      if (lastId === undefined) return ids;
+      // Move focus/caret to the end of the final sentence so the user can keep typing.
+      requestAnimationFrame(() => {
+        const el = document.querySelector<HTMLTextAreaElement>(
+          `[data-line-id="${lastId}"]`,
+        );
+        if (el) {
+          el.focus();
+          const len = el.value.length;
+          el.setSelectionRange(len, len);
+        }
+      });
+      return ids;
+    },
+    [splitLine],
+  );
+
   if (isEmpty) {
     return (
       <div className={styles.empty}>
@@ -39,14 +61,15 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
         <p className={styles.emptySub}>
           Tell the assistant what story you want to tell — a topic, a vibe, a
           character. It'll draft a tight script right here. Or start typing
-          your first line directly.
+          your first line directly — paste a full script and we'll split it
+          into lines by sentence.
         </p>
         <button
           type="button"
           className={styles.primaryAddButton}
           onClick={handleAddLine}
         >
-          + Write the first line
+          + Start writing or paste a script
         </button>
       </div>
     );
@@ -79,6 +102,7 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
           onToggleSelect={toggleSelected}
           onChange={updateLine}
           onRemove={removeLine}
+          onPasteMultiline={handlePasteMultiline}
         />
       ))}
       <button

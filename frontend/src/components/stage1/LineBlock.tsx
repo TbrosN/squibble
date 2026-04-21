@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, type ClipboardEvent } from "react";
+import { splitIntoSentences } from "@/lib/splitSentences";
 import type { ScriptLine } from "@/types";
 import styles from "./LineBlock.module.css";
 
@@ -11,6 +12,7 @@ type LineBlockProps = {
   onToggleSelect: (id: number) => void;
   onChange: (id: number, patch: Partial<Omit<ScriptLine, "id">>) => void;
   onRemove?: (id: number) => void;
+  onPasteMultiline?: (id: number, sentences: string[]) => number[] | void;
 };
 
 export function LineBlock({
@@ -20,6 +22,7 @@ export function LineBlock({
   onToggleSelect,
   onChange,
   onRemove,
+  onPasteMultiline,
 }: LineBlockProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -29,6 +32,24 @@ export function LineBlock({
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
   }, [line.line]);
+
+  const handlePaste = (e: ClipboardEvent<HTMLTextAreaElement>) => {
+    if (!onPasteMultiline) return;
+    const pasted = e.clipboardData.getData("text");
+    if (!pasted) return;
+
+    const el = e.currentTarget;
+    const start = el.selectionStart ?? el.value.length;
+    const end = el.selectionEnd ?? el.value.length;
+    const merged =
+      el.value.slice(0, start) + pasted + el.value.slice(end);
+
+    const sentences = splitIntoSentences(merged);
+    if (sentences.length <= 1) return;
+
+    e.preventDefault();
+    onPasteMultiline(line.id, sentences);
+  };
 
   return (
     <div className={`${styles.row} ${selected ? styles.selected : ""}`}>
@@ -48,9 +69,10 @@ export function LineBlock({
           className={styles.lineText}
           value={line.line}
           rows={1}
-          placeholder="Write a line..."
+          placeholder="Write a line, or paste a whole script..."
           data-line-id={line.id}
           onChange={(e) => onChange(line.id, { line: e.target.value })}
+          onPaste={handlePaste}
         />
         {line.image_prompt && (
           <div className={styles.promptHint} title={line.image_prompt}>

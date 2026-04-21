@@ -120,3 +120,6 @@ Is this really due to maxing out my usage, or could it be too many parallel requ
 @REVIEW.md:5-9 let's fix these UX bugs.
 
 @backend/routers/generation.py:57-85 explain how this stream route works
+
+when the user pastes in a starting script, we should parse it and automatically break it into lines based on sentence breaks.
+
