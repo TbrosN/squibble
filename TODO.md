@@ -1,5 +1,8 @@
 - Adjust image prompt so it doesn't put text there
-    - and add colors!
-    - And sometimes icons/diagrams like X or whatever
-- Adjust script prompt to avoid titles, make line breaks when the next image should be shown (inform it about the powerpoint-like format)
-    - Plus make the script storylike, slightly sarcastic/witty/relatable
+    - and add colors! remove the black and white restriction
+    - And can use icons/diagrams like X or whatever
+    - Keep the images or diagrams simple though, as they will only be shown for a few seconds (important context for the model!)
+- Adjust script prompt to:
+    - avoid titles; the script should read like a story.
+    - The script should be descriptive, and sarcastic/witty/relatable (this can be baked into the "personality" part of the system prompt)
+    - make line breaks when the next image should be shown (inform it about the powerpoint-like format that our video follows. In particular, the model might want to have line breaks in the middle of a sentence sometimes. Line breaks should almost never be after two or more sentences, as we want the images to switch often to keep the audience engaged)
