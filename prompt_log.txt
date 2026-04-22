@@ -123,3 +123,4 @@ Is this really due to maxing out my usage, or could it be too many parallel requ
 
 when the user pastes in a starting script, we should parse it and automatically break it into lines based on sentence breaks.
 
+@backend/services/audio_service.py @backend/services/image_service.py explain how our generation pipeline works. What do the system prompts look like? What is the input and output format for @backend/services/script_service.py scripts, images, and audio? What is context management like, e.g. when generating images or audio, do the models have the previous slides/audio as context?
