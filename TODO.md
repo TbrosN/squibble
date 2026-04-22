@@ -1,0 +1,5 @@
+- Adjust image prompt so it doesn't put text there
+    - and add colors!
+    - And sometimes icons/diagrams like X or whatever
+- Adjust script prompt to avoid titles, make line breaks when the next image should be shown (inform it about the powerpoint-like format)
+    - Plus make the script storylike, slightly sarcastic/witty/relatable
