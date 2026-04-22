@@ -1,21 +1,27 @@
 export type ScriptLine = {
   id: number;
   line: string;
-  image_prompt: string;
 };
 
+// UI-only type: the chat log shown to the user. The server no longer accepts
+// prior messages — it keeps its own rolling history keyed by script_id. This
+// type exists purely so the chat bar can render the running conversation.
 export type ChatMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
 export type ChatRequest = {
-  messages: ChatMessage[];
+  message: string;
+  // Opaque handle for the ongoing draft. Null on the first turn; server
+  // mints and returns one, client echoes it back on subsequent turns.
+  script_id: string | null;
+  canvas_lines: string[];
   selected_lines: number[];
-  current_script: ScriptLine[];
 };
 
 export type ChatResponse = {
+  script_id: string;
   reply: string;
   script: ScriptLine[];
 };

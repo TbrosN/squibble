@@ -74,11 +74,6 @@ export function LineBlock({
           onChange={(e) => onChange(line.id, { line: e.target.value })}
           onPaste={handlePaste}
         />
-        {line.image_prompt && (
-          <div className={styles.promptHint} title={line.image_prompt}>
-            ▸ {line.image_prompt}
-          </div>
-        )}
       </div>
       {onRemove && (
         <button

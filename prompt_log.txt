@@ -124,3 +124,19 @@ Is this really due to maxing out my usage, or could it be too many parallel requ
 when the user pastes in a starting script, we should parse it and automatically break it into lines based on sentence breaks.
 
 @backend/services/audio_service.py @backend/services/image_service.py explain how our generation pipeline works. What do the system prompts look like? What is the input and output format for @backend/services/script_service.py scripts, images, and audio? What is context management like, e.g. when generating images or audio, do the models have the previous slides/audio as context?
+
+I want to refactor the script generation to be a bit simpler and more token efficient: my plan is to:
+- Use a string-replace type editing system so the llm doesnt have to output the entire new script every time. To accomplish this, it might be useful to leverage built-in file editing tools from Claude and keep the script in some kind of file. Help me decide which file format makes the most sense
+- Remove the image prompts per line. Each line already provides enough context about what the image should look like. As such, we should pass the raw line to the image prompt instead.
+
+Let's make a high-level implementation plan for this.
+
+cool, I want to move away from line ids too, at least at the llm's level of abstraction: llm should just be string-replacing imo, and we can then process the file into separated lines. A consideration for this approach would be that a long line (which shouldnt happen anyway, but still worth concerning about imo), might be broken onto multiple lines by the llm, which we would parse incorrectly. Perhaps we can do some basic syntax where each line ends with a semicolon. Then, we can very easily parse out the lines. Lets update the plan accordingly
+
+ok let's implement this
+
+Some adjustments:
+- the llm needs the full message history still, so it can see previous user messages and its own responses
+- @backend/services/script_service.py:73-88 we shouldnt send all the canvas contents to the llm ourselves. Instead, let's just rely on the file edit tools; if it attempts a string replace for a string that is out of date, then it will just call the read file tool anyway. @backend/services/script_service.py:166-180 let's avoid carrying around weird dicts like this. opt for dataclasses or pydantic models instead.
+- Let's make sure that script files are saved under the output directory, the same place where we save the audio and images for instance.
+- @backend/models/script.py:13-14 what is session id?

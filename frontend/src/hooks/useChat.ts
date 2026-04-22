@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { ApiError, apiClient } from "@/lib/apiClient";
 import type { ChatMessage, ScriptLine } from "@/types";
 
@@ -19,6 +19,10 @@ export function useChat(): ChatController {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Opaque handle for this draft's rolling server-side state (history + the
+  // on-disk script buffer the model edits). Null on first turn; server mints
+  // one and we echo it back for every subsequent turn.
+  const scriptIdRef = useRef<string | null>(null);
 
   const send = useCallback<ChatController["send"]>(
     async (content, { selectedLines, currentScript }) => {
@@ -26,20 +30,21 @@ export function useChat(): ChatController {
       if (!trimmed || sending) return null;
 
       const userMessage: ChatMessage = { role: "user", content: trimmed };
-      const nextHistory = [...messages, userMessage];
-      setMessages(nextHistory);
+      setMessages((prev) => [...prev, userMessage]);
       setSending(true);
       setError(null);
 
       try {
         const result = await apiClient.scriptChat({
-          messages: nextHistory,
+          message: trimmed,
+          script_id: scriptIdRef.current,
+          canvas_lines: currentScript.map((l) => l.line),
           selected_lines: selectedLines,
-          current_script: currentScript,
         });
 
-        setMessages([
-          ...nextHistory,
+        scriptIdRef.current = result.script_id;
+        setMessages((prev) => [
+          ...prev,
           { role: "assistant", content: result.reply || "Updated." },
         ]);
         return result.script;
@@ -49,13 +54,15 @@ export function useChat(): ChatController {
             ? e.message
             : "Couldn't reach the assistant. Please try again.";
         setError(message);
-        setMessages(nextHistory);
+        // Roll back the optimistic user message so the log reflects what was
+        // actually delivered.
+        setMessages((prev) => prev.slice(0, -1));
         return null;
       } finally {
         setSending(false);
       }
     },
-    [messages, sending],
+    [sending],
   );
 
   const dismissError = useCallback(() => setError(null), []);

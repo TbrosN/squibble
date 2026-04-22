@@ -18,12 +18,13 @@ _script_service = ScriptService()
 @router.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest) -> ChatResponse:
     try:
-        reply, script = await _script_service.chat(
-            messages=request.messages,
+        script_id, reply, script = await _script_service.chat(
+            script_id=request.script_id,
+            message=request.message,
+            canvas_lines=request.canvas_lines,
             selected_lines=request.selected_lines,
-            current_script=request.current_script,
         )
-        return ChatResponse(reply=reply, script=script)
+        return ChatResponse(script_id=script_id, reply=reply, script=script)
     except Exception as e:
         logger.error("Script chat failed: %s", e)
         raise HTTPException(

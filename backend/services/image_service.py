@@ -22,7 +22,7 @@ class ImageService:
         try:
             filename = Generation.IMAGE_FILENAME_TEMPLATE.format(index=line.id)
             image_path = job_dir / filename
-            prompt = f"{Generation.IMAGE_STYLE_PREFIX}{line.image_prompt}"
+            prompt = f"{Generation.IMAGE_STYLE_PREFIX}{line.line}"
 
             response = await self._client.aio.models.generate_content(
                 model=Models.IMAGE,
