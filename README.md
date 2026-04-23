@@ -1,13 +1,32 @@
 # Squibble
 
-A sleek two-stage creative tool: collaborate with AI to write a tight script,
-then watch it come to life as audio and images generate in real time.
+An AI co-creative tool for generating narration-style YoutTube videos such as [this](https://www.youtube.com/shorts/uuYMYaa6sEQ?feature=share).
+
+Write and refine a script alongside an agentic assistant, then watch it come to life as Squibble generates images and a voiceover, and stitches them together into a video.
 
 ```
 squibble/
 ├── backend/    # FastAPI app — all LLM, TTS, image, and video logic
 └── frontend/   # Next.js App Router — the liquid-glass studio UI
 ```
+
+## Usage
+
+1. **Script Studio.** Chat with the assistant at the bottom of the page,
+   or edit the script manually. Click the line numbers to select them as context for the agent.
+2. **Generation Studio.** Hit "Generate Video →". A grid of cards fills in
+   top-to-bottom as each line's audio and image generate in parallel.
+   Click a finished card to preview its image with audio. Cancel any time
+   to go back to the script.
+3. **Download.** When everything finishes, grab the stitched `.mp4`.
+
+## Features I'm Proud Of
+- Agent editing system: a file-backed script is edited using Anthropics built-in string replace-based editor tool.
+  This resulted in a low-lift implementation that lets Claude use familiar tools from training, while also letting
+  us support very long scripts natively, rather than carrying them in memory.
+    - I designed a syntax for the script file, where line breaks are indicated by semicolons
+    - System prompts for the image and script-writing agents are sufficiently informative about the overall process
+    of the app and video format that they can make intelligent decisions about where to put line breaks and what kinds of images make sense to generate.
 
 ## Prerequisites
 
@@ -23,24 +42,10 @@ Install [uv](https://docs.astral.sh/uv/getting-started/installation/), then:
 cd backend
 uv sync
 cp .env.example .env    # fill in your API keys
-uv run uvicorn main:app --reload --port 8000
+uv run main.py
 ```
 
-`uv sync` creates `.venv/` and installs locked dependencies from `uv.lock`.
-To work inside the venv manually: `source .venv/bin/activate` then run
-`uvicorn` as usual.
-
-Required env vars (in `backend/.env`, never committed):
-
-| Key                   | Purpose                              |
-| --------------------- | ------------------------------------ |
-| `ANTHROPIC_API_KEY`   | Claude — script writing (Stage 1)    |
-| `OPENAI_API_KEY`      | `tts-1` — per-line audio             |
-| `REPLICATE_API_TOKEN` | `flux-schnell` — per-line image      |
-| `CORS_ALLOW_ORIGINS`  | Comma-sep origin list (default `http://localhost:3000`) |
-
-Generated media lives under `backend/output/{job_id}/` and is served back
-through `/generate/asset/...` and `/generate/download/...`.
+The backend requires Claude, Gemini, and ElevenLabs API keys (see `.env.example`). You will need to fill these in if you want to run the app locally.
 
 ## Frontend
 
@@ -54,26 +59,3 @@ npm run dev
 The only env var the frontend needs is `NEXT_PUBLIC_API_URL`. All LLM,
 TTS, image, and video calls happen on the backend — the frontend bundle
 holds no secrets.
-
-## Flow
-
-1. **Script Studio.** Chat with the assistant at the bottom of the page.
-   Every line is directly editable. Click any line's number to include it
-   in your next request ("make this one funnier").
-2. **Generation Studio.** Hit "Generate Video →". A grid of cards fills in
-   top-to-bottom as each line's audio and image generate in parallel.
-   Click a finished card to preview its image with audio. Cancel any time
-   to go back to the script.
-3. **Download.** When everything finishes, grab the stitched `.mp4`.
-
-## Project conventions
-
-See [`SPEC.md`](./SPEC.md) for the full style guide. Highlights:
-
-- All model names, paths, and style prefixes live in `backend/constants.py`.
-- Every structured value crossing a function boundary is a Pydantic model or
-  `@dataclass` — no raw `dict` passing.
-- Secrets only exist in `backend/.env`. Frontend `.env.local` may only contain
-  `NEXT_PUBLIC_API_URL`.
-- Top-level routers / orchestrators are the only places that `logger.error` /
-  `logger.warning`. Deep helpers re-raise with added context.
