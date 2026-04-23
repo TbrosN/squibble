@@ -31,6 +31,13 @@ class Generation:
     AUDIO_FILENAME_TEMPLATE = "audio_{index:02d}.mp3"
     IMAGE_FILENAME_TEMPLATE = "image_{index:02d}.png"
 
+    # TikTok / Shorts vertical format. The image model supports a fixed set of
+    # aspect-ratio strings; the rendered video is then padded/scaled to this
+    # exact pixel resolution so every segment matches.
+    IMAGE_ASPECT_RATIO = "9:16"
+    VIDEO_WIDTH = 1080
+    VIDEO_HEIGHT = 1920
+
 
 class Script:
     # Path the model uses to refer to the script buffer via the text editor tool.

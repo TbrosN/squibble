@@ -164,3 +164,5 @@ Let's improve the manual script editing UX:
 - pressing backspace on an already empty line should delete it
 
 when lines are selected, pressing backspace should delete the lines. But there should be an are you sure confirm dialog before the actual deletion.
+
+The standard TikTok aspect ratio is 9:16, with an optimal resolution of 1080 x 1920 pixels. Let's update our image generation accordingly, and make/update any appropriate constants.

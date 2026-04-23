@@ -29,7 +29,7 @@ class ImageService:
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     response_modalities=["IMAGE"],
-                    image_config=types.ImageConfig(aspect_ratio="1:1"),
+                    image_config=types.ImageConfig(aspect_ratio=Generation.IMAGE_ASPECT_RATIO),
                 ),
             )
 

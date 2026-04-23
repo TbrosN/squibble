@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 
-from constants import Paths
+from constants import Generation, Paths
 from models.job import VideoResult
 
 
@@ -59,6 +59,7 @@ class VideoService:
     @classmethod
     async def _render_segment(cls, seg: VideoSegment, out_path: Path) -> None:
         duration = max(seg.duration, 0.5)
+        w, h = Generation.VIDEO_WIDTH, Generation.VIDEO_HEIGHT
         await cls._run_ffmpeg(
             "-y",
             "-loop", "1",
@@ -67,8 +68,8 @@ class VideoService:
             "-c:v", "libx264",
             "-tune", "stillimage",
             "-pix_fmt", "yuv420p",
-            "-vf", "scale=1024:1024:force_original_aspect_ratio=decrease,"
-                   "pad=1024:1024:(ow-iw)/2:(oh-ih)/2:color=black,"
+            "-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
+                   f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=white,"
                    "setsar=1,fps=30",
             "-c:a", "aac",
             "-b:a", "192k",
