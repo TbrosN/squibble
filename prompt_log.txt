@@ -144,3 +144,5 @@ Some adjustments:
 @TODO.md Take a look at this TODO list I made, with details on how we should adjust our system prompts. Please implement the changes.
 
 can you create lightweight testing files for the image and script generation? I want to be able to quickly test and iterate on our prompts like @backend/constants.py:20-25 @backend/constants.py:59-60 .
+
+remove the cancel button once the video is ready to download.

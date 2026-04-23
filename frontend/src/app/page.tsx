@@ -120,19 +120,21 @@ export default function HomePage() {
                 </Button>
               </a>
             )}
-            <CancelButton
-              onClick={cancelGeneration}
-              disabled={
-                generation.phase !== "running" &&
-                generation.phase !== "starting"
-              }
-              title={
-                generation.phase === "running" ||
-                generation.phase === "starting"
-                  ? "Stop generation"
-                  : "Nothing to cancel"
-              }
-            />
+            {generation.phase !== "complete" && (
+              <CancelButton
+                onClick={cancelGeneration}
+                disabled={
+                  generation.phase !== "running" &&
+                  generation.phase !== "starting"
+                }
+                title={
+                  generation.phase === "running" ||
+                  generation.phase === "starting"
+                    ? "Stop generation"
+                    : "Nothing to cancel"
+                }
+              />
+            )}
           </>
         )}
       </div>
