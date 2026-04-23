@@ -21,8 +21,7 @@ class Paths:
 class Generation:
     IMAGE_STYLE_PREFIX = (
         "Simple hand-drawn illustration, playful and friendly, bold clean lines, "
-        "flat colors with a white paper background. Stick figures, icons, arrows, "
-        "symbols (like X, ✓, ?, hearts, sparkles) are welcome."
+        "flat colors with a white paper background. You can use stick figures, icons, and/or arrows if needed."
         "Use color freely, but keep the palette limited and cohesive."
         "Avoid text, letters, numbers, words, captions, or labels."
         "Keep the image extremely simple and instantly parseable — this image is only on screen "
