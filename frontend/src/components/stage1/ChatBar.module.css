@@ -1,13 +1,29 @@
 .wrap {
-  position: fixed;
-  left: 50%;
-  bottom: 24px;
-  transform: translateX(-50%);
-  width: min(860px, calc(100% - 48px));
-  z-index: 10;
+  width: 100%;
+  max-width: 880px;
+  margin: 0 auto;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transform-origin: center bottom;
+  /* Spring-like ease with a gentle overshoot so the bar settles in instead
+     of snapping. Opacity runs faster than transform so the motion reads
+     after the element is already visible. */
+  transition:
+    transform 520ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 240ms ease-out;
+  will-change: transform, opacity;
+}
+
+.scrolledOut {
+  opacity: 0;
+  transform: translateY(36px) scale(0.97);
+  pointer-events: none;
+  /* Pull both properties back the same length so the exit is symmetrical
+     and doesn't overshoot off-screen. */
+  transition:
+    transform 280ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 200ms ease-in;
 }
 
 .assistantReply {

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import type { KeyboardEvent } from "react";
 import { Button } from "@/components/shared/Button";
+import { useInView } from "@/hooks/useInView";
 import type { ChatMessage } from "@/types";
 import styles from "./ChatBar.module.css";
 
@@ -21,7 +22,14 @@ export function ChatBar({
 }: ChatBarProps) {
   const [value, setValue] = useState("");
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const lastAssistant = [...messages].reverse().find((m) => m.role === "assistant");
+  const lastAssistant = [...messages]
+    .reverse()
+    .find((m) => m.role === "assistant");
+  // Trigger the fade slightly inside the viewport so the user actually sees
+  // the animation finish before the bar is fully on screen.
+  const { ref, inView } = useInView<HTMLDivElement>({
+    rootMargin: "0px 0px -40px 0px",
+  });
 
   useEffect(() => {
     const el = textareaRef.current;
@@ -52,7 +60,10 @@ export function ChatBar({
         : "Ask for edits, or keep shaping the script…";
 
   return (
-    <div className={styles.wrap}>
+    <div
+      ref={ref}
+      className={`${styles.wrap} ${inView ? "" : styles.scrolledOut}`}
+    >
       {lastAssistant && (
         <div className={styles.assistantReply} role="status">
           {lastAssistant.content}
@@ -86,7 +97,8 @@ export function ChatBar({
         </Button>
       </form>
       <div className={styles.hint}>
-        Enter to send · Shift+Enter for newline · click a line's number to target it
+        Enter to send · Shift+Enter for newline · click a line's number to
+        target it
       </div>
     </div>
   );

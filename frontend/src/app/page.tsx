@@ -11,6 +11,7 @@ import { GenerationGrid } from "@/components/stage2/GenerationGrid";
 import { SlidePreviewModal } from "@/components/stage2/SlidePreviewModal";
 import { useChat } from "@/hooks/useChat";
 import { useGeneration } from "@/hooks/useGeneration";
+import { useInView } from "@/hooks/useInView";
 import { useScriptEditor } from "@/hooks/useScriptEditor";
 import { apiClient } from "@/lib/apiClient";
 import type { SlideAsset, Stage } from "@/types";
@@ -23,6 +24,11 @@ export default function HomePage() {
   const script = useScriptEditor();
   const chat = useChat();
   const generation = useGeneration();
+  // Fade the top bar out the moment any of it leaves the viewport so it
+  // mirrors the chat bar's behavior at the bottom.
+  const topBar = useInView<HTMLDivElement>({
+    rootMargin: "-12px 0px 0px 0px",
+  });
 
   const handleSend = useCallback(
     async (content: string) => {
@@ -80,7 +86,10 @@ export default function HomePage() {
 
   return (
     <main className={styles.appShell}>
-      <div className={styles.topBar}>
+      <div
+        ref={topBar.ref}
+        className={`${styles.topBar} ${topBar.inView ? "" : styles.topBarScrolledOut}`}
+      >
         <div className={styles.brand}>
           <span className={styles.brandDot} aria-hidden />
           Squibble

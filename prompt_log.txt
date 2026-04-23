@@ -146,3 +146,14 @@ Some adjustments:
 can you create lightweight testing files for the image and script generation? I want to be able to quickly test and iterate on our prompts like @backend/constants.py:20-25 @backend/constants.py:59-60 .
 
 remove the cancel button once the video is ready to download.
+
+The most recent agent response and the prompt input textbox can get in the way when user is trying to read the script. Let's refactor the UX so that:
+- when user scrolls up into the script, the input textbox and most recent agent response (if any) are collapsed/hidden
+- when user scrolls back down past the script text, they uncollapse and are usable again
+
+this doesn't work well on long scripts that require scrolling to read. Instead, let's simplify this:
+- The text input/last agent response simply sit at the bottom of the page (below the script card)
+- We can still keep the nice animation when it scrolls in/out of view
+- Let's similarly handle the navbar; it should not be sticky, but simply be at the top. We can add a similar animation there too.
+
+the animation looks like the input is just appearing suddenly, like the site is lagging. Make it more of a graceful bounce-in.
