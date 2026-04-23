@@ -140,3 +140,5 @@ Some adjustments:
 - @backend/services/script_service.py:73-88 we shouldnt send all the canvas contents to the llm ourselves. Instead, let's just rely on the file edit tools; if it attempts a string replace for a string that is out of date, then it will just call the read file tool anyway. @backend/services/script_service.py:166-180 let's avoid carrying around weird dicts like this. opt for dataclasses or pydantic models instead.
 - Let's make sure that script files are saved under the output directory, the same place where we save the audio and images for instance.
 - @backend/models/script.py:13-14 what is session id?
+
+@TODO.md Take a look at this TODO list I made, with details on how we should adjust our system prompts. Please implement the changes.
