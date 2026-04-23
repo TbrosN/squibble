@@ -9,9 +9,11 @@ export type ScriptEditor = {
   setLines: (lines: ScriptLine[]) => void;
   updateLine: (id: number, patch: Partial<Omit<ScriptLine, "id">>) => void;
   addLine: () => number;
+  insertLineAfter: (id: number, text?: string) => number;
   removeLine: (id: number) => void;
   splitLine: (id: number, sentences: string[]) => number[];
   toggleSelected: (id: number) => void;
+  selectAll: () => void;
   clearSelection: () => void;
   isSelected: (id: number) => boolean;
   isEmpty: boolean;
@@ -48,6 +50,18 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     nextIdRef.current += 1;
     setLinesState((prev) => [...prev, { id, line: "" }]);
     return id;
+  }, []);
+
+  const insertLineAfter = useCallback((id: number, text: string = ""): number => {
+    const newId = nextIdRef.current;
+    nextIdRef.current += 1;
+    setLinesState((prev) => {
+      const idx = prev.findIndex((l) => l.id === id);
+      const newLine: ScriptLine = { id: newId, line: text };
+      if (idx === -1) return [...prev, newLine];
+      return [...prev.slice(0, idx + 1), newLine, ...prev.slice(idx + 1)];
+    });
+    return newId;
   }, []);
 
   const removeLine = useCallback((id: number) => {
@@ -87,6 +101,10 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     );
   }, []);
 
+  const selectAll = useCallback(() => {
+    setSelectedIds(lines.map((l) => l.id));
+  }, [lines]);
+
   const clearSelection = useCallback(() => setSelectedIds([]), []);
 
   const selectedSet = useMemo(() => new Set(selectedIds), [selectedIds]);
@@ -101,9 +119,11 @@ export function useScriptEditor(initial: ScriptLine[] = []): ScriptEditor {
     setLines,
     updateLine,
     addLine,
+    insertLineAfter,
     removeLine,
     splitLine,
     toggleSelected,
+    selectAll,
     clearSelection,
     isSelected,
     isEmpty: lines.length === 0,

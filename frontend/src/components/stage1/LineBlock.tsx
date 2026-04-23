@@ -1,6 +1,11 @@
 "use client";
 
-import { useEffect, useRef, type ClipboardEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  type ClipboardEvent,
+  type KeyboardEvent,
+} from "react";
 import { splitIntoSentences } from "@/lib/splitSentences";
 import type { ScriptLine } from "@/types";
 import styles from "./LineBlock.module.css";
@@ -13,6 +18,9 @@ type LineBlockProps = {
   onChange: (id: number, patch: Partial<Omit<ScriptLine, "id">>) => void;
   onRemove?: (id: number) => void;
   onPasteMultiline?: (id: number, sentences: string[]) => number[] | void;
+  onEnter?: (id: number, before: string, after: string) => void;
+  onBackspaceEmpty?: (id: number) => void;
+  onSelectAll?: () => void;
 };
 
 export function LineBlock({
@@ -23,6 +31,9 @@ export function LineBlock({
   onChange,
   onRemove,
   onPasteMultiline,
+  onEnter,
+  onBackspaceEmpty,
+  onSelectAll,
 }: LineBlockProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -51,6 +62,43 @@ export function LineBlock({
     onPasteMultiline(line.id, sentences);
   };
 
+  const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    // Cmd/Ctrl+A selects every line in the script instead of just this textarea.
+    if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "a") {
+      if (!onSelectAll) return;
+      e.preventDefault();
+      onSelectAll();
+      return;
+    }
+
+    // Enter splits the current line at the caret and creates a new line below.
+    // Shift+Enter still inserts a literal newline as an escape hatch.
+    if (e.key === "Enter" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+      if (!onEnter) return;
+      e.preventDefault();
+      const el = e.currentTarget;
+      const caret = el.selectionStart ?? el.value.length;
+      const before = el.value.slice(0, caret);
+      const after = el.value.slice(el.selectionEnd ?? caret);
+      onEnter(line.id, before, after);
+      return;
+    }
+
+    // Backspace on an already-empty line removes that line entirely.
+    if (
+      e.key === "Backspace" &&
+      !e.metaKey &&
+      !e.ctrlKey &&
+      !e.altKey &&
+      e.currentTarget.value === ""
+    ) {
+      if (!onBackspaceEmpty) return;
+      e.preventDefault();
+      onBackspaceEmpty(line.id);
+      return;
+    }
+  };
+
   return (
     <div className={`${styles.row} ${selected ? styles.selected : ""}`}>
       <button
@@ -73,6 +121,7 @@ export function LineBlock({
           data-line-id={line.id}
           onChange={(e) => onChange(line.id, { line: e.target.value })}
           onPaste={handlePaste}
+          onKeyDown={handleKeyDown}
         />
       </div>
       {onRemove && (

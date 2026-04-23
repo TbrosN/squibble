@@ -17,21 +17,50 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
     toggleSelected,
     updateLine,
     addLine,
+    insertLineAfter,
     removeLine,
     splitLine,
+    selectAll,
     clearSelection,
     isEmpty,
   } = state;
 
-  const handleAddLine = useCallback(() => {
-    const id = addLine();
+  const focusLine = useCallback((id: number, caret: "start" | "end") => {
     requestAnimationFrame(() => {
       const el = document.querySelector<HTMLTextAreaElement>(
         `[data-line-id="${id}"]`,
       );
-      el?.focus();
+      if (!el) return;
+      el.focus();
+      const pos = caret === "end" ? el.value.length : 0;
+      el.setSelectionRange(pos, pos);
     });
-  }, [addLine]);
+  }, []);
+
+  const handleAddLine = useCallback(() => {
+    const id = addLine();
+    focusLine(id, "end");
+  }, [addLine, focusLine]);
+
+  const handleEnter = useCallback(
+    (id: number, before: string, after: string) => {
+      updateLine(id, { line: before });
+      const newId = insertLineAfter(id, after);
+      focusLine(newId, "start");
+    },
+    [updateLine, insertLineAfter, focusLine],
+  );
+
+  const handleBackspaceEmpty = useCallback(
+    (id: number) => {
+      const idx = lines.findIndex((l) => l.id === id);
+      if (idx === -1) return;
+      const neighbor = idx > 0 ? lines[idx - 1] : lines[idx + 1];
+      removeLine(id);
+      if (neighbor) focusLine(neighbor.id, "end");
+    },
+    [lines, removeLine, focusLine],
+  );
 
   const handlePasteMultiline = useCallback(
     (id: number, sentences: string[]) => {
@@ -39,19 +68,10 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
       const lastId = ids[ids.length - 1];
       if (lastId === undefined) return ids;
       // Move focus/caret to the end of the final sentence so the user can keep typing.
-      requestAnimationFrame(() => {
-        const el = document.querySelector<HTMLTextAreaElement>(
-          `[data-line-id="${lastId}"]`,
-        );
-        if (el) {
-          el.focus();
-          const len = el.value.length;
-          el.setSelectionRange(len, len);
-        }
-      });
+      focusLine(lastId, "end");
       return ids;
     },
-    [splitLine],
+    [splitLine, focusLine],
   );
 
   if (isEmpty) {
@@ -103,6 +123,9 @@ export function ScriptEditor({ state }: ScriptEditorProps) {
           onChange={updateLine}
           onRemove={removeLine}
           onPasteMultiline={handlePasteMultiline}
+          onEnter={handleEnter}
+          onBackspaceEmpty={handleBackspaceEmpty}
+          onSelectAll={selectAll}
         />
       ))}
       <button
