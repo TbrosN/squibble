@@ -97,8 +97,7 @@ export function ChatBar({
         </Button>
       </form>
       <div className={styles.hint}>
-        Enter to send · Shift+Enter for newline · click a line's number to
-        target it
+        ⏎ to send · ⇧+⏎ for newline · Click to select lines
       </div>
     </div>
   );

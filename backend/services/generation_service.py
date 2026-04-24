@@ -6,6 +6,7 @@ import asyncio
 import json
 import logging
 from pathlib import Path
+from contextlib import suppress
 
 from constants import Paths
 from models.events import (
@@ -69,9 +70,10 @@ class GenerationService:
                     ),
                 )
 
-                audio_result, image_result = await asyncio.gather(
-                    self._audio.generate(line, job.id, job_dir),
-                    self._image.generate(line, job.id, job_dir),
+                audio_result, image_result = await self._generate_line_assets(
+                    line=line,
+                    job_id=job.id,
+                    job_dir=job_dir,
                 )
                 assert isinstance(audio_result, AudioResult)
                 assert isinstance(image_result, ImageResult)
@@ -117,13 +119,62 @@ class GenerationService:
         except Exception as e:
             logger.error("Generation job %s failed: %s", job.id, e)
             job.status = JobStatus.ERROR
+            if current_line_id is not None:
+                failed_line = next((line for line in job.lines if line.id == current_line_id), None)
+                if failed_line is not None:
+                    failed_line.status = LineGenerationStatus.ERROR
+                    await self._emit(
+                        job,
+                        LineUpdateEvent(
+                            line_id=current_line_id,
+                            status=LineGenerationStatus.ERROR,
+                        ),
+                    )
             await self._emit(
                 job,
                 ErrorEvent(
                     line_id=current_line_id,
-                    message="Something went wrong generating this slide.",
+                    message="Something went wrong generating this slide, so the whole video was stopped.",
                 ),
             )
+
+    async def _generate_line_assets(
+        self,
+        *,
+        line,
+        job_id: str,
+        job_dir: Path,
+    ) -> tuple[AudioResult, ImageResult]:
+        audio_task = asyncio.create_task(self._audio.generate(line, job_id, job_dir))
+        image_task = asyncio.create_task(self._image.generate(line, job_id, job_dir))
+
+        try:
+            done, pending = await asyncio.wait(
+                {audio_task, image_task},
+                return_when=asyncio.FIRST_EXCEPTION,
+            )
+
+            for task in done:
+                exc = task.exception()
+                if exc is not None:
+                    for pending_task in pending:
+                        pending_task.cancel()
+                    for pending_task in pending:
+                        with suppress(asyncio.CancelledError):
+                            await pending_task
+                    raise exc
+
+            audio_result = await audio_task
+            image_result = await image_task
+            return audio_result, image_result
+        except Exception as e:
+            for task in (audio_task, image_task):
+                if not task.done():
+                    task.cancel()
+            for task in (audio_task, image_task):
+                with suppress(asyncio.CancelledError):
+                    await task
+            raise RuntimeError(f"GenerationService failed on line {line.id}: {e}") from e
 
     @staticmethod
     async def _emit(job: Job, event: SSEEvent) -> None:
