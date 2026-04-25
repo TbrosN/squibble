@@ -8,6 +8,9 @@ class Models:
     TTS = "eleven_flash_v2_5"
     TTS_VOICE_ID = "JBFqnCBsd6RMkjVDRZzb"
     TTS_OUTPUT_FORMAT = "mp3_44100_128"
+    GOOGLE_TTS_LANGUAGE_CODE = "en-US"
+    GOOGLE_TTS_VOICE_NAME = "en-US-Chirp3-HD-Algenib"
+    GOOGLE_TTS_AUDIO_ENCODING = "MP3"
     IMAGE = "gemini-2.5-flash-image"
 
 

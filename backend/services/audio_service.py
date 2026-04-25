@@ -1,10 +1,13 @@
-"""Text-to-speech per-line audio generation via ElevenLabs."""
+"""Text-to-speech per-line audio generation."""
 
 from __future__ import annotations
 
 import asyncio
+import base64
 from pathlib import Path
+from typing import Protocol
 
+import httpx
 from elevenlabs.client import AsyncElevenLabs
 from mutagen.mp3 import MP3
 
@@ -14,28 +17,76 @@ from models.job import AudioResult
 from models.script import ScriptLine
 
 
-class AudioService:
+class AudioGenerator(Protocol):
+    async def generate_audio(self, text: str) -> bytes:
+        """Generate an MP3 audio payload for the provided narration text."""
+        ...
+
+
+class ElevenLabsAudioGenerator:
     def __init__(self) -> None:
         self._client = AsyncElevenLabs(api_key=settings.elevenlabs_api_key)
+
+    async def generate_audio(self, text: str) -> bytes:
+        audio_stream = self._client.text_to_speech.convert(
+            voice_id=Models.TTS_VOICE_ID,
+            model_id=Models.TTS,
+            text=text,
+            output_format=Models.TTS_OUTPUT_FORMAT,
+        )
+
+        chunks: list[bytes] = []
+        async for chunk in audio_stream:
+            if chunk:
+                chunks.append(chunk)
+        return b"".join(chunks)
+
+
+class GoogleTtsAudioGenerator:
+    _SYNTHESIZE_URL = "https://texttospeech.googleapis.com/v1/text:synthesize"
+
+    def __init__(self) -> None:
+        self._api_key = settings.google_tts_api_key
+
+    async def generate_audio(self, text: str) -> bytes:
+        payload = {
+            "input": {"text": text},
+            "voice": {
+                "languageCode": Models.GOOGLE_TTS_LANGUAGE_CODE,
+                "name": Models.GOOGLE_TTS_VOICE_NAME,
+            },
+            "audioConfig": {
+                "audioEncoding": Models.GOOGLE_TTS_AUDIO_ENCODING,
+            },
+        }
+
+        async with httpx.AsyncClient(timeout=60.0) as client:
+            response = await client.post(
+                self._SYNTHESIZE_URL,
+                params={"key": self._api_key},
+                json=payload,
+            )
+            if response.is_error:
+                raise RuntimeError(
+                    f"Google TTS request failed with HTTP {response.status_code}: {response.text}"
+                )
+
+        audio_content = response.json().get("audioContent")
+        if not audio_content:
+            raise RuntimeError("Google TTS response contained no audio data")
+        return base64.b64decode(audio_content)
+
+
+class AudioService:
+    def __init__(self, generator: AudioGenerator) -> None:
+        self._generator = generator
 
     async def generate(self, line: ScriptLine, job_id: str, job_dir: Path) -> AudioResult:
         try:
             filename = Generation.AUDIO_FILENAME_TEMPLATE.format(index=line.id)
             audio_path = job_dir / filename
 
-            audio_stream = self._client.text_to_speech.convert(
-                voice_id=Models.TTS_VOICE_ID,
-                model_id=Models.TTS,
-                text=line.line,
-                output_format=Models.TTS_OUTPUT_FORMAT,
-            )
-
-            chunks: list[bytes] = []
-            async for chunk in audio_stream:
-                if chunk:
-                    chunks.append(chunk)
-            audio_bytes = b"".join(chunks)
-
+            audio_bytes = await self._generator.generate_audio(line.line)
             await asyncio.to_thread(audio_path.write_bytes, audio_bytes)
             duration = await asyncio.to_thread(self._probe_duration, audio_path)
 

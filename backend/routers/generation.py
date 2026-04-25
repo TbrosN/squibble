@@ -15,7 +15,7 @@ from jobs.store import job_store
 from models.events import SSEEvent, SSEEventType
 from models.job import JobStatus
 from models.script import ScriptLine
-from services.audio_service import AudioService
+from services.audio_service import AudioService, GoogleTtsAudioGenerator
 from services.generation_service import GenerationService
 from services.image_service import ImageService
 from services.video_service import VideoService
@@ -24,7 +24,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/generate", tags=["generation"])
 
 _generation_service = GenerationService(
-    audio_service=AudioService(),
+    audio_service=AudioService(generator=GoogleTtsAudioGenerator()),
     image_service=ImageService(),
     video_service=VideoService(),
 )
