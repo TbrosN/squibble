@@ -29,23 +29,39 @@ class VideoService:
                 raise RuntimeError("no segments to assemble")
 
             final_path = job_dir / Paths.FINAL_VIDEO_FILENAME
-            concat_list_path = job_dir / "concat.txt"
+            image_concat_path = job_dir / "image_concat.txt"
 
-            part_paths: list[Path] = []
-            for idx, seg in enumerate(segments):
-                part_path = job_dir / f"part_{idx:02d}.mp4"
-                await self._render_segment(seg, part_path)
-                part_paths.append(part_path)
+            await asyncio.to_thread(
+                image_concat_path.write_text,
+                self._build_image_concat_file(segments),
+                encoding="utf-8",
+            )
 
-            concat_lines = "\n".join(f"file '{p.name}'" for p in part_paths) + "\n"
-            await asyncio.to_thread(concat_list_path.write_text, concat_lines)
-
+            audio_args = [arg for seg in segments for arg in ("-i", seg.audio_path)]
             await self._run_ffmpeg(
                 "-y",
-                "-f", "concat",
-                "-safe", "0",
-                "-i", str(concat_list_path),
-                "-c", "copy",
+                "-f",
+                "concat",
+                "-safe",
+                "0",
+                "-i",
+                str(image_concat_path),
+                *audio_args,
+                "-filter_complex",
+                self._build_filter_complex(len(segments)),
+                "-map",
+                "[v]",
+                "-map",
+                "[a]",
+                "-c:v",
+                "libx264",
+                "-pix_fmt",
+                "yuv420p",
+                "-c:a",
+                "aac",
+                "-b:a",
+                "192k",
+                "-shortest",
                 str(final_path),
             )
 
@@ -57,26 +73,32 @@ class VideoService:
             raise RuntimeError(f"VideoService.assemble failed: {e}") from e
 
     @classmethod
-    async def _render_segment(cls, seg: VideoSegment, out_path: Path) -> None:
-        duration = max(seg.duration, 0.5)
+    def _build_filter_complex(cls, segment_count: int) -> str:
         w, h = Generation.VIDEO_WIDTH, Generation.VIDEO_HEIGHT
-        await cls._run_ffmpeg(
-            "-y",
-            "-loop", "1",
-            "-i", seg.image_path,
-            "-i", seg.audio_path,
-            "-c:v", "libx264",
-            "-tune", "stillimage",
-            "-pix_fmt", "yuv420p",
-            "-vf", f"scale={w}:{h}:force_original_aspect_ratio=decrease,"
-                   f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=white,"
-                   "setsar=1,fps=30",
-            "-c:a", "aac",
-            "-b:a", "192k",
-            "-shortest",
-            "-t", f"{duration:.3f}",
-            str(out_path),
+        audio_inputs = "".join(f"[{idx}:a]" for idx in range(1, segment_count + 1))
+        return (
+            f"[0:v]scale={w}:{h}:force_original_aspect_ratio=decrease,"
+            f"pad={w}:{h}:(ow-iw)/2:(oh-ih)/2:color=white,"
+            f"setsar=1,fps=30[v];"
+            f"{audio_inputs}concat=n={segment_count}:v=0:a=1[a]"
         )
+
+    @classmethod
+    def _build_image_concat_file(cls, segments: list[VideoSegment]) -> str:
+        lines: list[str] = []
+        for seg in segments:
+            image_path = cls._escape_concat_path(Path(seg.image_path).resolve())
+            lines.append(f"file '{image_path}'")
+            lines.append(f"duration {max(seg.duration, 0.5):.6f}")
+
+        # The concat demuxer needs the final frame repeated so the last duration is honored.
+        final_image_path = cls._escape_concat_path(Path(segments[-1].image_path).resolve())
+        lines.append(f"file '{final_image_path}'")
+        return "\n".join(lines) + "\n"
+
+    @staticmethod
+    def _escape_concat_path(path: Path) -> str:
+        return path.as_posix().replace("'", "'\\''")
 
     @staticmethod
     async def _run_ffmpeg(*args: str) -> None:
@@ -88,5 +110,5 @@ class VideoService:
         )
         _, stderr = await proc.communicate()
         if proc.returncode != 0:
-            tail = stderr.decode(errors="ignore")[-500:]
+            tail = stderr.decode(errors="ignore")[-1000:]
             raise RuntimeError(f"ffmpeg exited {proc.returncode}: {tail}")
