@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/shared/Button";
 import { CancelButton } from "@/components/shared/CancelButton";
@@ -97,6 +98,14 @@ export default function HomePage() {
             {stage === "script" ? "Script Studio" : "Generation Studio"}
           </span>
         </div>
+        <nav className={styles.navLinks} aria-label="Primary navigation">
+          <Link className={`${styles.navLink} ${styles.navLinkActive}`} href="/">
+            Script
+          </Link>
+          <Link className={styles.navLink} href="/stop-motion">
+            Stop Motion
+          </Link>
+        </nav>
         <div className={styles.spacer} />
         {stage === "script" ? (
           <Button

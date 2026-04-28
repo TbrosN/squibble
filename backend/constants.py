@@ -12,6 +12,7 @@ class Models:
     GOOGLE_TTS_VOICE_NAME = "en-US-Chirp3-HD-Algenib"
     GOOGLE_TTS_AUDIO_ENCODING = "MP3"
     IMAGE = "gemini-2.5-flash-image"
+    STOP_MOTION_IMAGE = "gemini-3.1-flash-image-preview"
 
 
 class Paths:
@@ -19,6 +20,8 @@ class Paths:
     SCRIPT_FILENAME = "script.json"        # Stage 2 per-job frozen script snapshot
     CHAT_SCRIPT_FILENAME = "script.txt"    # Stage 1 live chat buffer (tool target)
     FINAL_VIDEO_FILENAME = "final.mp4"
+    STOP_MOTION_VIDEO_FILENAME = "stop_motion.mp4"
+    RESTYLED_VIDEO_FILENAME = "restyled_stop_motion.mp4"
 
 
 class Generation:
@@ -40,6 +43,37 @@ class Generation:
     IMAGE_ASPECT_RATIO = "9:16"
     VIDEO_WIDTH = 1080
     VIDEO_HEIGHT = 1920
+
+
+class StopMotion:
+    DEFAULT_FRAMES_PER_SECOND = 2
+    MAX_FRAMES = 180
+    INPUT_VIDEO_FILENAME = "input_video"
+    EXTRACTED_FRAMES_DIR = "stop_motion_frames"
+    RESTYLED_FRAMES_DIR = "restyled_frames"
+    FRAME_FILENAME_PATTERN = "frame_%05d.png"
+    FRAME_GLOB = "frame_*.png"
+    RESTYLE_PROMPT_TEMPLATE = (
+    'Recreate the provided image with the exact same composition, camera angle, and subject layout, '
+    'but completely replace ALL materials and textures with "{style_prompt}". '
+
+    'This is a full material transformation: every object in the scene must be constructed entirely from {style_prompt}, '
+    'including small details, background elements, liquids, reflections, and transparent objects. '
+
+    'Do NOT preserve any original materials (no real glass, no real food, no real surfaces). '
+    'Everything must visibly and physically exist as {style_prompt}. '
+
+    'Apply material-consistent scaling: small or finely detailed objects must be represented using smaller units of {style_prompt}, '
+    'while larger objects use larger or aggregated forms. '
+    'For example, finely chopped elements should be built from many tiny pieces of {style_prompt}, not smoothed shapes. '
+
+    'Simplify the scene geometry: reduce fine detail and convert forms into bold, chunky, material-driven shapes. '
+    'Avoid realism—favor stylized, handcrafted, stop-motion-like construction. '
+
+    'Ensure strong material readability: the viewer should instantly recognize that EVERYTHING in the frame is made from {style_prompt}. '
+
+    'Preserve lighting direction and overall composition, but reinterpret all surfaces through the material. '
+)
 
 
 class Script:

@@ -12,7 +12,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from config import settings
 from constants import Logging, Paths
-from routers import generation, script
+from routers import generation, script, stopmotion
 
 logging.basicConfig(
     level=logging.INFO,
@@ -35,6 +35,7 @@ Paths.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 app.include_router(script.router)
 app.include_router(generation.router)
+app.include_router(stopmotion.router)
 
 
 @app.exception_handler(StarletteHTTPException)

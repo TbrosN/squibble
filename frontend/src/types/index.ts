@@ -78,3 +78,11 @@ export type SSEEvent =
   | ErrorEvent;
 
 export type Stage = "script" | "generation";
+
+export type StopMotionResponse = {
+  job_id: string;
+  download_url: string;
+  preview_url: string;
+  stylized_preview_url: string;
+  frame_count: number;
+};
