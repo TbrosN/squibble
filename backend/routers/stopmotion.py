@@ -30,11 +30,56 @@ class StopMotionResponse(BaseModel):
     frame_count: int
 
 
+class StopMotionPreviewResponse(BaseModel):
+    job_id: str
+    preview_url: str
+    frame_count: int
+    frames_per_second: float
+
+
+@router.post("/timing-preview", response_model=StopMotionPreviewResponse)
+async def timing_preview(
+    file: UploadFile = File(...),
+    frames_per_second: float = Form(StopMotion.DEFAULT_FRAMES_PER_SECOND),
+) -> StopMotionPreviewResponse:
+    if not file.content_type or not file.content_type.startswith("video/"):
+        raise HTTPException(
+            status_code=400,
+            detail={"error": "Upload a video file to preview stop-motion timing."},
+        )
+
+    job_id = uuid.uuid4().hex
+    job_dir = Paths.OUTPUT_DIR / "stopmotion" / job_id
+    job_dir.mkdir(parents=True, exist_ok=True)
+
+    input_path = job_dir / _input_filename(file.filename)
+    try:
+        await _write_upload(file, input_path)
+        result = await _stop_motion_service.create_timing_preview(
+            input_path=input_path,
+            job_id=job_id,
+            job_dir=job_dir,
+            frames_per_second=frames_per_second,
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail={"error": f"Could not preview the stop-motion timing: {e}"},
+        ) from e
+
+    return StopMotionPreviewResponse(
+        job_id=job_id,
+        preview_url=result.url,
+        frame_count=result.frame_count,
+        frames_per_second=frames_per_second,
+    )
+
+
 @router.post("/create", response_model=StopMotionResponse)
 async def create(
     file: UploadFile = File(...),
     style_prompt: str = Form(...),
-    frames_per_second: int = Form(StopMotion.DEFAULT_FRAMES_PER_SECOND),
+    frames_per_second: float = Form(StopMotion.DEFAULT_FRAMES_PER_SECOND),
 ) -> StopMotionResponse:
     if not file.content_type or not file.content_type.startswith("video/"):
         raise HTTPException(

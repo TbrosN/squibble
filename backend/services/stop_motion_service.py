@@ -22,6 +22,13 @@ class StopMotionResult:
 
 
 @dataclass(frozen=True)
+class StopMotionPreviewResult:
+    path: str
+    url: str
+    frame_count: int
+
+
+@dataclass(frozen=True)
 class FrameSize:
     width: int
     height: int
@@ -32,6 +39,37 @@ class StopMotionService:
         self._image = image_service
         self._video = video_service
 
+    async def create_timing_preview(
+        self,
+        *,
+        input_path: Path,
+        job_id: str,
+        job_dir: Path,
+        frames_per_second: float = StopMotion.DEFAULT_FRAMES_PER_SECOND,
+    ) -> StopMotionPreviewResult:
+        try:
+            fps = self._validate_fps(frames_per_second)
+            stop_motion_path = job_dir / Paths.STOP_MOTION_VIDEO_FILENAME
+            extracted_dir = job_dir / StopMotion.EXTRACTED_FRAMES_DIR
+
+            await self._reset_dir(extracted_dir)
+            await self._create_stop_motion_video(input_path, stop_motion_path, fps)
+            frame_paths = await self._extract_frames(stop_motion_path, extracted_dir, fps)
+            if len(frame_paths) > StopMotion.MAX_FRAMES:
+                raise RuntimeError(
+                    f"Stop-motion clip has {len(frame_paths)} frames; "
+                    f"the current limit is {StopMotion.MAX_FRAMES}. "
+                    "Try a shorter video or lower frame rate."
+                )
+
+            return StopMotionPreviewResult(
+                path=str(stop_motion_path),
+                url=f"/stopmotion/preview/{job_id}",
+                frame_count=len(frame_paths),
+            )
+        except Exception as e:
+            raise RuntimeError(f"StopMotionService.create_timing_preview failed: {e}") from e
+
     async def process(
         self,
         *,
@@ -39,7 +77,7 @@ class StopMotionService:
         style_prompt: str,
         job_id: str,
         job_dir: Path,
-        frames_per_second: int = StopMotion.DEFAULT_FRAMES_PER_SECOND,
+        frames_per_second: float = StopMotion.DEFAULT_FRAMES_PER_SECOND,
     ) -> StopMotionResult:
         try:
             fps = self._validate_fps(frames_per_second)
@@ -84,7 +122,7 @@ class StopMotionService:
         except Exception as e:
             raise RuntimeError(f"StopMotionService.process failed: {e}") from e
 
-    async def _create_stop_motion_video(self, input_path: Path, output_path: Path, fps: int) -> None:
+    async def _create_stop_motion_video(self, input_path: Path, output_path: Path, fps: float) -> None:
         await self._video._run_ffmpeg(
             "-y",
             "-i",
@@ -106,7 +144,7 @@ class StopMotionService:
             str(output_path),
         )
 
-    async def _extract_frames(self, video_path: Path, frame_dir: Path, fps: int) -> list[Path]:
+    async def _extract_frames(self, video_path: Path, frame_dir: Path, fps: float) -> list[Path]:
         await self._video._run_ffmpeg(
             "-y",
             "-i",
@@ -143,7 +181,7 @@ class StopMotionService:
         frame_dir: Path,
         audio_source_path: Path,
         output_path: Path,
-        fps: int,
+        fps: float,
         frame_size: FrameSize,
     ) -> None:
         await self._video._run_ffmpeg(
@@ -210,7 +248,9 @@ class StopMotionService:
         await asyncio.to_thread(path.mkdir, parents=True, exist_ok=True)
 
     @staticmethod
-    def _validate_fps(frames_per_second: int) -> int:
+    def _validate_fps(frames_per_second: float) -> float:
         if frames_per_second < 1 or frames_per_second > 12:
             raise ValueError("frames_per_second must be between 1 and 12")
+        if (frames_per_second * 2) % 1 != 0:
+            raise ValueError("frames_per_second must use 0.5 increments")
         return frames_per_second

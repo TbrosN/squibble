@@ -6,22 +6,63 @@ import type { ChangeEvent, FormEvent } from "react";
 import { Button } from "@/components/shared/Button";
 import { GlassPanel } from "@/components/shared/GlassPanel";
 import { apiClient } from "@/lib/apiClient";
-import type { StopMotionResponse } from "@/types";
+import type { StopMotionPreviewResponse, StopMotionResponse } from "@/types";
 import styles from "../page.module.css";
+
+type BusyAction = "preview" | "create" | null;
+
+const FPS_MIN = 1;
+const FPS_MAX = 12;
+const FPS_STEP = 0.5;
+
+function formatFps(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(1);
+}
 
 export default function StopMotionPage() {
   const [file, setFile] = useState<File | null>(null);
   const [style, setStyle] = useState("playdoh");
   const [framesPerSecond, setFramesPerSecond] = useState(2);
-  const [busy, setBusy] = useState(false);
+  const [busyAction, setBusyAction] = useState<BusyAction>(null);
   const [error, setError] = useState<string | null>(null);
+  const [timingPreview, setTimingPreview] =
+    useState<StopMotionPreviewResponse | null>(null);
   const [result, setResult] = useState<StopMotionResponse | null>(null);
+  const busy = busyAction !== null;
 
   const handleFile = useCallback((event: ChangeEvent<HTMLInputElement>) => {
     setFile(event.target.files?.[0] ?? null);
+    setTimingPreview(null);
     setResult(null);
     setError(null);
   }, []);
+
+  const previewTiming = useCallback(async () => {
+    if (!file) {
+      setError("Choose a video first.");
+      return;
+    }
+
+    setBusyAction("preview");
+    setError(null);
+    setTimingPreview(null);
+
+    try {
+      const response = await apiClient.previewStopMotionTiming(
+        file,
+        framesPerSecond,
+      );
+      setTimingPreview(response);
+    } catch (e) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : "Couldn't preview the timing. Please try again.";
+      setError(message);
+    } finally {
+      setBusyAction(null);
+    }
+  }, [file, framesPerSecond]);
 
   const createStopMotion = useCallback(
     async (event: FormEvent<HTMLFormElement>) => {
@@ -31,7 +72,7 @@ export default function StopMotionPage() {
         return;
       }
 
-      setBusy(true);
+      setBusyAction("create");
       setError(null);
       setResult(null);
 
@@ -49,12 +90,13 @@ export default function StopMotionPage() {
             : "Couldn't restyle the video. Please try again.";
         setError(message);
       } finally {
-        setBusy(false);
+        setBusyAction(null);
       }
     },
     [file, framesPerSecond, style],
   );
 
+  const timingPreviewUrl = apiClient.assetUrl(timingPreview?.preview_url);
   const stopMotionPreviewUrl = apiClient.assetUrl(result?.preview_url);
   const stylizedPreviewUrl = apiClient.assetUrl(result?.stylized_preview_url);
   const downloadUrl = apiClient.assetUrl(result?.download_url);
@@ -112,31 +154,64 @@ export default function StopMotionPage() {
                   disabled={busy}
                 />
               </label>
-              <label className={styles.field}>
-                <span>Frames per second</span>
+              <label className={`${styles.field} ${styles.fpsField}`}>
+                <span className={styles.fpsLabel}>
+                  Frames per second
+                  <strong>{formatFps(framesPerSecond)} FPS</strong>
+                </span>
                 <input
-                  type="number"
-                  min={1}
-                  max={12}
+                  type="range"
+                  min={FPS_MIN}
+                  max={FPS_MAX}
+                  step={FPS_STEP}
                   value={framesPerSecond}
                   onChange={(event) =>
                     setFramesPerSecond(Number(event.target.value))
                   }
                   disabled={busy}
                 />
+                <div className={styles.fpsScale} aria-hidden>
+                  <span>{FPS_MIN}</span>
+                  <span>{FPS_MAX}</span>
+                </div>
               </label>
-              <Button
-                variant="primary"
-                size="md"
-                type="submit"
-                disabled={busy || !file}
-              >
-                {busy ? "Restyling..." : "Make Stop-Motion"}
-              </Button>
+              <div className={styles.stopMotionActions}>
+                <Button
+                  variant="ghost"
+                  size="md"
+                  type="button"
+                  onClick={previewTiming}
+                  disabled={busy || !file}
+                >
+                  {busyAction === "preview" ? "Previewing..." : "Preview timing"}
+                </Button>
+                <Button
+                  variant="primary"
+                  size="md"
+                  type="submit"
+                  disabled={busy || !file}
+                >
+                  {busyAction === "create" ? "Restyling..." : "Make Stop-Motion"}
+                </Button>
+              </div>
             </div>
           </form>
 
           {error && <p className={styles.stopMotionError}>{error}</p>}
+
+          {timingPreview && timingPreviewUrl && (
+            <div className={styles.stopMotionResult}>
+              <div className={styles.stopMotionSummary}>
+                Timing preview at{" "}
+                {formatFps(timingPreview.frames_per_second)} FPS with{" "}
+                {timingPreview.frame_count} stop-motion frames.
+              </div>
+              <div className={styles.videoPreviewCard}>
+                <p>Adjust FPS and preview again until the motion feels right.</p>
+                <video controls src={timingPreviewUrl} />
+              </div>
+            </div>
+          )}
 
           {result && (
             <div className={styles.stopMotionResult}>

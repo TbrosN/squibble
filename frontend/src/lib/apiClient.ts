@@ -2,6 +2,7 @@ import type {
   ChatRequest,
   ChatResponse,
   ScriptLine,
+  StopMotionPreviewResponse,
   StopMotionResponse,
 } from "@/types";
 
@@ -101,6 +102,35 @@ export const apiClient = {
     }
 
     return (await response.json()) as StopMotionResponse;
+  },
+
+  async previewStopMotionTiming(
+    file: File,
+    framesPerSecond: number,
+  ): Promise<StopMotionPreviewResponse> {
+    const form = new FormData();
+    form.append("file", file);
+    form.append("frames_per_second", String(framesPerSecond));
+
+    const response = await fetch(`${API_BASE_URL}/stopmotion/timing-preview`, {
+      method: "POST",
+      body: form,
+    });
+
+    if (!response.ok) {
+      let message = "Couldn't preview the timing. Please try a shorter clip.";
+      try {
+        const body = await response.json();
+        if (body && typeof body.error === "string") {
+          message = body.error;
+        }
+      } catch {
+        // fall through
+      }
+      throw new ApiError(message, response.status);
+    }
+
+    return (await response.json()) as StopMotionPreviewResponse;
   },
 
   streamUrl(jobId: string): string {

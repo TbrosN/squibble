@@ -86,3 +86,10 @@ export type StopMotionResponse = {
   stylized_preview_url: string;
   frame_count: number;
 };
+
+export type StopMotionPreviewResponse = {
+  job_id: string;
+  preview_url: string;
+  frame_count: number;
+  frames_per_second: number;
+};

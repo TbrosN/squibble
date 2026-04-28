@@ -172,6 +172,43 @@
   box-shadow: 0 0 0 3px var(--accent-glow);
 }
 
+.fpsField {
+  grid-column: 1 / -1;
+}
+
+.fpsLabel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.fpsLabel strong {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.field input[type="range"] {
+  min-height: auto;
+  padding: 0;
+  border: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.field input[type="range"]:focus {
+  box-shadow: none;
+}
+
+.fpsScale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
 .field input::file-selector-button {
   border: 0;
   border-radius: 999px;
@@ -181,6 +218,13 @@
   margin-right: 10px;
   font: inherit;
   cursor: pointer;
+}
+
+.stopMotionActions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .stopMotionError {
@@ -212,6 +256,7 @@
 }
 
 .videoPreviewCard {
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 8px;
